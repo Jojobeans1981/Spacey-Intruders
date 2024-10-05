@@ -157,18 +157,15 @@ class Enemy(Ship):
             self.lasers.append(laser)
             self.cool_down_counter = 1
 
-    def move_lasers(self, vel, objs):
+    def move_lasers(self, vel, obj):
         self.cooldown()
         for laser in self.lasers:
             laser.move(vel)
             if laser.off_screen(HEIGHT):
                 self.lasers.remove(laser)
-            # else:
-            #     for obj in objs:
-            #         if laser.collision(obj):
-            #             objs.remove(obj)
-            #             if laser in self.lasers:
-            #                 self.lasers.remove(laser)
+            elif laser.collision(obj):  # Check if the laser collides with the player
+                obj.health -= 10       # Decrease player's health
+                self.lasers.remove(laser)
 
 
 def collide(obj1, obj2):
@@ -181,7 +178,7 @@ def main():
     run = True
     fps = 60
     level = 0
-    lives = 5
+    lives = 5  # Player starts with 5 lives
 
     main_font = pygame.font.SysFont("comicsans", 50)
     lost_font = pygame.font.SysFont("comicsans", 60)
@@ -202,14 +199,14 @@ def main():
 
     def redraw_window():
         WIN.blit(BG, (0, 0))
-        # draw text
-        lives_label = main_font.render("Lives: {lives}", 1, (255, 255, 255))
-        level_label = main_font.render("Level: {level}", 1, (255, 255, 255))
+        # Display lives and level
+        lives_label = main_font.render(f"Lives: {lives}", 1, (255, 255, 255))
+        level_label = main_font.render(f"Level: {level}", 1, (255, 255, 255))
 
         WIN.blit(lives_label, (10, 10))
         WIN.blit(level_label, (WIDTH - level_label.get_width() - 10, 10))
 
-        for      enemy1 in enemies:
+        for enemy1 in enemies:
             enemy1.draw(WIN)
 
         player.draw(WIN)
@@ -224,7 +221,8 @@ def main():
         clock.tick(fps)
         redraw_window()
 
-        if lives <= 0 or player.health <= 0:
+        # End game if lives are zero
+        if lives <= 0:
             lost = True
             lost_count += 1
 
@@ -234,6 +232,7 @@ def main():
             else:
                 continue
 
+        # Increment level when all enemies are defeated
         if len(enemies) == 0:
             level += 1
             wave_length += 5
@@ -246,6 +245,7 @@ def main():
             if event.type == pygame.QUIT:
                 quit()
 
+        # Player movement logic
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] and player.x - player_vel > 0:  # left
             player.x -= player_vel
@@ -258,6 +258,7 @@ def main():
         if keys[pygame.K_SPACE]:
             player.shoot()
 
+        # Enemy and laser movement logic
         for enemy in enemies[:]:
             enemy.move(enemy_vel)
             enemy.move_lasers(laser_vel, player)
@@ -271,10 +272,20 @@ def main():
             elif enemy.y + enemy.get_height() > HEIGHT:
                 lives -= 1
                 enemies.remove(enemy)
+                # Restart the player with one less life
+                player = Player(300, 630)  # Reset player position
 
         player.move_lasers(-laser_vel, enemies)
 
+        # If the player health reaches 0, restart the game with one less life
+        if player.health <= 0:
+            lives -= 1
+            player = Player(300, 630)  # Reset the player position and health
+            enemies = []  # Reset enemies
+            wave_length = 5  # Restart with the first wave
+            level = 0  # Start at level 0
 
+            
 def main_menu():
     title_font = pygame.font.SysFont("comicsans", 70)
     run = True
