@@ -4,6 +4,7 @@ import os
 import random
 
 pygame.font.init()
+pygame.mixer.init()
 
 WIDTH, HEIGHT = 750, 750
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -285,7 +286,7 @@ def main():
             wave_length = 5  # Restart with the first wave
             level = 0  # Start at level 0
 
-            
+
 def main_menu():
     title_font = pygame.font.SysFont("comicsans", 70)
     run = True

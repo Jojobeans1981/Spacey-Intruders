@@ -11,6 +11,7 @@ def collide(obj1, obj2):
 
 # Set game font
 pygame.font.init()
+pygame.mixer.init()
 
 # Set window size
 WIDTH, HEIGHT = 750, 750
@@ -30,6 +31,11 @@ RED_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_red.png"))
 GREEN_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_green.png"))
 BLUE_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_blue.png"))
 YELLOW_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_yellow.png"))
+
+LASER_SOUND = pygame.mixer.Sound(os.path.join("assets", "Player_Laser.mp3"))
+EXPLOSION_SOUND = pygame.mixer.Sound(os.path.join("assets", "Explosion.mp3"))
+pygame.mixer.music.load(os.path.join("assets", "Background.mp3" ))
+
 
 # Game backdrop
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets", "background-black.png")), (WIDTH, HEIGHT))
@@ -89,6 +95,7 @@ class Ship:
             laser = Laser(self.x + self.get_width() // 2 - 20, self.y, self.laser_img)
             self.lasers.append(laser)
             self.cool_down_counter = 1
+            LASER_SOUND.play() 
 
     def get_width(self):
         return self.ship_img.get_width()
@@ -115,6 +122,7 @@ class Player(Ship):
                 for obj in objs:
                     if laser.collision(obj):
                         objs.remove(obj)
+                        EXPLOSION_SOUND.play
                         if laser in self.lasers:
                             self.lasers.remove(laser)
 
@@ -130,7 +138,6 @@ class Player(Ship):
             self.ship_img.get_width() * (self.health / self.max_health),
             10))
 
-# Create enemy class
 # Create enemy class
 class Enemy(Ship):
     COLOR_MAP = {
@@ -152,12 +159,14 @@ class Enemy(Ship):
             laser = Laser(self.x + self.get_width() // 2 - 20, self.y + self.get_height(), self.laser_img)
             self.lasers.append(laser)
             self.cool_down_counter = 1
+            LASER_SOUND.play()
 
     def move_lasers(self, vel, player):
+        self.cooldown()  # Add this line to increment the cooldown counter
         for laser in self.lasers[:]:
             laser.move(vel)
             if laser.off_screen(HEIGHT):
-                self.lasers.remove(laser)
+             self.lasers.remove(laser)
             else:
                 if laser.collision(player):
                     player.health -= 10
@@ -177,6 +186,7 @@ def main():
 
     player = Player(300, 650)
     clock = pygame.time.Clock()
+    pygame.mixer.music.play(-1)  
 
     def redraw_window():
         WIN.blit(BG, (0, 0))
@@ -224,6 +234,7 @@ def main():
             if collide(enemy, player):
                 player.health -= 10
                 enemy_list.remove(enemy)
+                EXPLOSION_SOUND.play()
 
             # Remove enemy if it goes off the screen
             if enemy.y + enemy.get_height() > HEIGHT:
@@ -233,6 +244,7 @@ def main():
         player.move_lasers(-laser_velocity, enemy_list)
 # Main menu function
 def main_menu():
+
     title_font = pygame.font.SysFont("comicsans", 70)
     run = True
     while run:
