@@ -26,6 +26,9 @@ BLUE_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_blue_smal
 # Player ship
 YELLOW_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_yellow.png"))
 
+# Load explosion image
+EXPLOSION_IMAGE = pygame.image.load(os.path.join("assets", "dreamstime_xs_112225129.jpg"))
+
 # Load laser images
 RED_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_red.png"))
 GREEN_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_green.png"))
@@ -35,7 +38,6 @@ YELLOW_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_yellow.png"
 LASER_SOUND = pygame.mixer.Sound(os.path.join("assets", "Player_Laser.mp3"))
 EXPLOSION_SOUND = pygame.mixer.Sound(os.path.join("assets", "Explosion.mp3"))
 pygame.mixer.music.load(os.path.join("assets", "Background.mp3" ))
-
 
 # Game backdrop
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets", "background-black.png")), (WIDTH, HEIGHT))
@@ -111,6 +113,7 @@ class Player(Ship):
         self.laser_img = YELLOW_LASER
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
+        self.is_alive = True  # Track if the player is alive
 
     def move_lasers(self, vel, objs):
         self.cooldown()
@@ -122,13 +125,16 @@ class Player(Ship):
                 for obj in objs:
                     if laser.collision(obj):
                         objs.remove(obj)
-                        EXPLOSION_SOUND.play
+                        EXPLOSION_SOUND.play()
                         if laser in self.lasers:
                             self.lasers.remove(laser)
 
     def draw(self, window):
-        super().draw(window)
-        self.healthbar(window)
+        if self.is_alive:  # Only draw the ship if it's alive
+            super().draw(window)
+            self.healthbar(window)
+        else:  # Draw explosion image if the player is dead
+            window.blit(EXPLOSION_IMAGE, (self.x, self.y))
 
     def healthbar(self, window):
         pygame.draw.rect(window, (255, 0, 0),
@@ -166,11 +172,12 @@ class Enemy(Ship):
         for laser in self.lasers[:]:
             laser.move(vel)
             if laser.off_screen(HEIGHT):
-             self.lasers.remove(laser)
+                self.lasers.remove(laser)
             else:
                 if laser.collision(player):
                     player.health -= 10
                     self.lasers.remove(laser)
+
 # Main game function
 def main():
     run = True
@@ -193,6 +200,13 @@ def main():
         for enemy in enemy_list:
             enemy.draw(WIN)
         player.draw(WIN)
+
+        # Draw the lives and levels
+        lives_label = main_font.render(f"Lives: {lives}", True, (255, 255, 255))
+        level_label = main_font.render(f"Level: {level}", True, (255, 255, 255))
+        WIN.blit(lives_label, (10, 10))
+        WIN.blit(level_label, (WIDTH - level_label.get_width() - 10, 10))
+
         pygame.display.update()
 
     while run:
@@ -226,40 +240,38 @@ def main():
         for enemy in enemy_list[:]:
             enemy.move(enemy_velocity)
             enemy.move_lasers(laser_velocity, player)
-
-            if random.randrange(0, 2 * 60) == 1:
+            if random.random() < 0.02:  # Random chance for enemies to shoot
                 enemy.shoot()
-
-            # Check for collision with player
+            if enemy.y + enemy.get_height() > HEIGHT:
+                enemy_list.remove(enemy)
             if collide(enemy, player):
                 player.health -= 10
                 enemy_list.remove(enemy)
-                EXPLOSION_SOUND.play()
-
-            # Remove enemy if it goes off the screen
-            if enemy.y + enemy.get_height() > HEIGHT:
-                lives -= 1
-                enemy_list.remove(enemy)
 
         player.move_lasers(-laser_velocity, enemy_list)
-# Main menu function
-def main_menu():
 
-    title_font = pygame.font.SysFont("comicsans", 70)
-    run = True
-    while run:
-        WIN.blit(BG, (0, 0))
-        title_label = title_font.render("Press the mouse to begin...", True, (255, 255, 255))
-        WIN.blit(title_label, (WIDTH / 2 - title_label.get_width() / 2, 350))
-        pygame.display.update()
+        # Check for game over
+        if player.health <= 0:
+            player.is_alive = False  # Set player to not alive
+            lives -= 1
+            if lives <= 0:
+                run = False  # Game Over
+            else:
+                player.health = player.max_health  # Reset player health
+                player.x, player.y = 300, 650  # Reset player position
+                enemy_list.clear()  # Clear enemies for next wave
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse clicks
-                main()
+        # If no enemies left, move to the next level
+        if len(enemy_list) == 0:
+            level += 1
+            wave_length += 5
+            for i in range(wave_length):
+                enemy = Enemy(random.randrange(50, WIDTH - 100), random.randrange(-1500, -100),
+                              random.choice(["red", "blue", "green"]))
+                enemy_list.append(enemy)
 
     pygame.quit()
 
 # Start the game
-main_menu()
+if __name__ == "__main__":
+    main()
