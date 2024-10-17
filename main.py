@@ -96,6 +96,7 @@ class Ship:
         if self.cool_down_counter == 0:
             laser = Laser(self.x + self.get_width() // 2 - 20, self.y, self.laser_img)
             self.lasers.append(laser)
+            
             self.cool_down_counter = 1
             LASER_SOUND.play() 
 
@@ -107,7 +108,7 @@ class Ship:
 
 # Create player class
 class Player(Ship):
-    def __init__(self, x, y, health=100):
+    def __init__(self, x, y, health=100): 
         super().__init__(x, y, health)
         self.ship_img = YELLOW_SPACE_SHIP
         self.laser_img = YELLOW_LASER
