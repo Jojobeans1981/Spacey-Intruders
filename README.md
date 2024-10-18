@@ -1,6 +1,6 @@
 # Instructions for downloading Space intruders.
 
-# clone project to you local envirenment and ryun using  python interpreter in vs code or your preferred editor or environment that you use to run python applications
+# clone project to your local environment and run using  python interpreter in vs code or your preferred editor or environment that you use to run python applications
 
 
 
